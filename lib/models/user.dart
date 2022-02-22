@@ -1,10 +1,9 @@
-import 'dart:convert';
-
+import 'package:built_collection/built_collection.dart';
 import 'package:loono/helpers/date_without_day.dart';
 import 'package:loono/helpers/type_converters.dart';
 import 'package:loono/services/db/database.dart';
 import 'package:loono/utils/memoized_stream.dart';
-import 'package:loono_api/loono_api.dart' hide User;
+import 'package:loono_api/loono_api.dart';
 import 'package:moor/moor.dart';
 
 part 'user.g.dart';
@@ -17,7 +16,7 @@ class Users extends Table {
 
   TextColumn get sex => text().map(const SexDbConverter()).nullable()();
 
-  TextColumn get dateOfBirthRaw => text().nullable()();
+  TextColumn get dateOfBirth => text().map(const DateOfBirthConverter()).nullable()();
 
   TextColumn get nickname => text().nullable()();
 
@@ -30,6 +29,8 @@ class Users extends Table {
   DateTimeColumn get latestMapUpdateCheck => dateTime().nullable()();
 
   DateTimeColumn get latestMapUpdate => dateTime().nullable()();
+
+  TextColumn get badges => text().map(const BadgeListConverter()).nullable()();
 }
 
 @UseDao(tables: [Users])
@@ -76,7 +77,7 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
 
   Future<void> updateDateOfBirth(DateWithoutDay dateWithoutDay) async {
     await updateCurrentUser(
-      UsersCompanion(dateOfBirthRaw: Value(jsonEncode(dateWithoutDay.toJson()))),
+      UsersCompanion(dateOfBirth: Value<DateWithoutDay>(dateWithoutDay)),
     );
   }
 
@@ -90,5 +91,9 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
 
   Future<void> updateEmail(String email) async {
     await updateCurrentUser(UsersCompanion(email: Value(email)));
+  }
+
+  Future<void> updateBadges(BuiltList<Badge> badges) async {
+    await updateCurrentUser(UsersCompanion(badges: Value<BuiltList<Badge>>(badges)));
   }
 }

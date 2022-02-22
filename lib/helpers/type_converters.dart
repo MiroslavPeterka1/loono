@@ -3,8 +3,15 @@ import 'dart:convert';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:loono/helpers/date_without_day.dart';
 import 'package:loono_api/loono_api.dart'
-    show ExaminationStatus, ExaminationType, Sex, SimpleHealthcareProvider, standardSerializers;
+    show
+        Badge,
+        ExaminationStatus,
+        ExaminationType,
+        Sex,
+        SimpleHealthcareProvider,
+        standardSerializers;
 import 'package:moor/moor.dart';
 
 class CategoryDbConverter extends TypeConverter<BuiltList<String>, String> {
@@ -81,6 +88,23 @@ class SexDbConverter extends TypeConverter<Sex, String> {
   }
 }
 
+class DateOfBirthConverter extends TypeConverter<DateWithoutDay, String> {
+  const DateOfBirthConverter();
+
+  @override
+  DateWithoutDay? mapToDart(String? fromDb) {
+    if (fromDb == null) return null;
+    final dateTimeMap = jsonDecode(fromDb) as Map<String, dynamic>;
+    return DateWithoutDay.fromJson(dateTimeMap);
+  }
+
+  @override
+  String? mapToSql(DateWithoutDay? value) {
+    if (value == null) return null;
+    return jsonEncode(value.toJson());
+  }
+}
+
 class SimpleHealthcareListConverter
     extends JsonConverter<BuiltList<SimpleHealthcareProvider>, String> {
   const SimpleHealthcareListConverter();
@@ -100,6 +124,31 @@ class SimpleHealthcareListConverter
       standardSerializers.serialize(
         object,
         specifiedType: const FullType(BuiltList, [FullType(SimpleHealthcareProvider)]),
+      ),
+    );
+  }
+}
+
+class BadgeListConverter extends TypeConverter<BuiltList<Badge>, String> {
+  const BadgeListConverter();
+
+  @override
+  BuiltList<Badge>? mapToDart(String? fromDb) {
+    if (fromDb == null) return null;
+    return standardSerializers.deserialize(
+          jsonDecode(fromDb),
+          specifiedType: const FullType(BuiltList, [FullType(Badge)]),
+        ) as BuiltList<Badge>? ??
+        BuiltList.of(<Badge>[]);
+  }
+
+  @override
+  String? mapToSql(BuiltList<Badge>? value) {
+    if (value == null) return null;
+    return jsonEncode(
+      standardSerializers.serialize(
+        value,
+        specifiedType: const FullType(BuiltList, [FullType(Badge)]),
       ),
     );
   }
